@@ -5,8 +5,9 @@ use vars qw($VERSION %IRSSI);
 
 use Irssi qw(command_bind signal_add settings_add_str settings_get_str);
 
-$VERSION = '1.00';
-%IRSSI = (authors => 'Linostar',
+our $VERSION = '1.00';
+our %IRSSI = (authors => 'Linostar',
+          contact => 'https://github.com/linostar/irssi-scripts',
           name => 'Quick Escape Script',
           description => 'Quick Escape from Trap Channels',
           license => 'New BSD');
