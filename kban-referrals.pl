@@ -20,7 +20,7 @@ use Irssi qw(command_bind signal_add signal_add_first settings_add_str settings_
 
 our $VERSION = '1.02';
 our %IRSSI = (authors => 'Linostar',
-          contact => 'lino.star@outlook.com',
+          contact => 'linostar@sdf.org',
           name => 'KickBan Referrals Script',
           description => 'Script for kickbanning those who post referral links in a channel',
           license => 'New BSD');

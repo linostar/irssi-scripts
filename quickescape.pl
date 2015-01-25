@@ -19,7 +19,7 @@ use Irssi qw(command_bind signal_add settings_add_str settings_get_str);
 
 our $VERSION = '1.00';
 our %IRSSI = (authors => 'Linostar',
-          contact => 'lino.star@outlook.com',
+          contact => 'linostar@sdf.org',
           name => 'Quick Escape Script',
           description => 'Quick Escape from Trap Channels',
           license => 'New BSD');
