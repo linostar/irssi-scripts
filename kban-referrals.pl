@@ -5,7 +5,7 @@ use vars qw($VERSION %IRSSI);
 
 use Irssi qw(command_bind signal_add signal_add_first settings_add_str settings_get_str settings_set_str);
 
-our $VERSION = '1.00';
+our $VERSION = '1.01';
 our %IRSSI = (authors => 'Linostar',
           contact => 'https://github.com/linostar/irssi-scripts',
           name => 'KickBan Referrals Script',
@@ -255,7 +255,7 @@ sub kban_action {
   my $blacklist = settings_get_str('kbanreferrals_blacklist');
   my $chans = settings_get_str('kbanreferrals_channels');
   # add big ticket value to users who post messages without urls so they don't get punished
-  $tickets{ $nick } += 10 if (exists($tickets{ $nick }) && $chans =~ m/$target\b/i && !contains_url($msg));
+  $tickets{ $nick . $target } += 10 if (exists($tickets{ $nick . $target }) && $chans =~ m/$target\b/i && !contains_url($msg));
   # otherwise, start the real investigation
   if ($chans =~ m/$target\b/i && contains_url($msg)) {
     # paranoid mode
@@ -271,6 +271,7 @@ sub kban_action {
     }
     # normal mode
     else {
+      # if it is in the blacklist, always ban and stop here
       my $stop = 0;
       foreach (split(/\s+/, $blacklist)) {
         if ($msg =~ m/$_/i) {
@@ -280,6 +281,7 @@ sub kban_action {
         }
       }
       if (!$stop) {
+        # otherwise, if it is in the whitelist, don't ban and stop here
         foreach (split(/\s+/, $whitelist)) {
           if ($msg =~ m/$_/i) {
             $stop = 1;
@@ -292,7 +294,7 @@ sub kban_action {
         my $culprit = 0;
         $culprit = 1 if ($msg =~ m/[\/\?&]ref=/i);
         kb($server, $target, $nick, $nick_addr) if ($culprit);
-        $tickets{ $nick } += 1 if (exists($tickets{ $nick }) && !$culprit);
+        $tickets{ $nick . $target } += 1 if (exists($tickets{ $nick . $target }) && !$culprit);
       }
     }
   }
@@ -301,18 +303,22 @@ sub kban_action {
 # this and 'increase_ticket' are used to distinguish users who join, post a url, and leave
 sub ticket_start {
   my ($server, $channel, $nick, $nick_addr) = @_;
-  $tickets{ $nick } = 1;
+  my $chans = settings_get_str('kbanreferrals_channels');
+  if ($chans =~ m/$channel\b/i) {
+    $tickets{ $nick . $channel } = 1;
+  }
 }
 
 sub increase_ticket {
   my ($server, $channel, $nick, $nick_addr, $reason) = @_;
-  if (exists($tickets{ $nick })) {
+  my $chans = settings_get_str('kbanreferrals_channels');
+  if (exists($tickets{ $nick . $channel }) && $chans =~ m/$channel\b/i) {
     # if the poor bastard only posted one sole message containing a url before leaving
     # then it's probably a referral url, so ban him/her
-    if ($tickets{ $nick } == 2) {
+    if ($tickets{ $nick . $channel } == 2) {
       ban($server, $channel, $nick, $nick_addr);
     }
-    delete $tickets{ $nick };
+    delete $tickets{ $nick . $channel };
   }
 }
 
