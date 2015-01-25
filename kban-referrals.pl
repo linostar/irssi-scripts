@@ -5,7 +5,7 @@ use vars qw($VERSION %IRSSI);
 
 use Irssi qw(command_bind signal_add signal_add_first settings_add_str settings_get_str settings_set_str);
 
-our $VERSION = '1.01';
+our $VERSION = '1.02';
 our %IRSSI = (authors => 'Linostar',
           contact => 'https://github.com/linostar/irssi-scripts',
           name => 'KickBan Referrals Script',
@@ -162,23 +162,29 @@ sub kbanref {
     }
   }
   # chan remove command
-  # known bug: if ##channel exists in the list, the command 'remove #channel' will replace '##channel' by '#'
   elsif ($data =~ m/^chan remove/i) {
     my $rmchans = '';
+    my $ch = '';
     $data =~ /(chan remove)\s+(.+)/i;
     foreach (split(/\s+/, $2)) {
-      $stripped = $_;
-      $stripped =~ s/\#+//;
-      if ($chans !~ m/\b$stripped\b/i) {
-        print("KBan-Referrals: channel $_ is not in the list.");
+      $ch = $_;
+      if ($ch !~ m/^\#/ && $chans !~ m/^\#$ch\b/i && $chans !~ m/\s\#$ch\b/i) {
+        print("KBan-Referrals: channel \#$ch is not in the list.");
+        next;
       }
-      elsif ($_ !~ m/^\#/) {
-        $rmchans .= ' #' . $_;
-        $chans =~ s/\#\b$_\b//i;
+      elsif ($ch !~ m/^\#/) {
+        $rmchans .= ' #' . $ch;
+        $chans =~ s/^\#$ch\b//i;
+        $chans =~ s/\s\#$ch\b//i;
+        next;
+      }
+      if ($chans !~ m/^$ch\b/i && $chans !~ m/\s$ch\b/i) {
+        print("KBan-Referrals: channel $ch is not in the list.");
       }
       else {
-        $rmchans .= ' ' . $_;
-        $chans =~ s/\b$_\b//i;
+        $rmchans .= ' ' . $ch;
+        $chans =~ s/\s$ch\b//i;
+        $chans =~ s/^$ch\b//i;
       }
     }
     $chans =~ s/\s{2,}/ /g; #remove extra spaces
