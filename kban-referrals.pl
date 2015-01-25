@@ -1,3 +1,16 @@
+# KBan-Referrals
+#
+# A script that kickban users who post referral URLs. It can operate in paranoid mode or normal mode.
+# In paranoid mode, any user posting in his message a URL that does not match a site in the whitelist will be kickbanned.
+# In normal mode, the URL will be checked against a blacklist first, then the user will only get kickbanned 
+# if his URL doesn't match a site in the whitelist and he meets some criterion that identifies referral URLs.
+#
+# Usage
+#
+# /kbanref is the command name of the script.
+# Typing '/kbanref' will only enumerate the sub-commands of the script.
+# Typing '/kbanref help' will list all the sub-commands with a short explanation for each.
+#
 use strict;
 use warnings;
 
@@ -7,7 +20,7 @@ use Irssi qw(command_bind signal_add signal_add_first settings_add_str settings_
 
 our $VERSION = '1.02';
 our %IRSSI = (authors => 'Linostar',
-          contact => 'https://github.com/linostar/irssi-scripts',
+          contact => 'lino.star@outlook.com',
           name => 'KickBan Referrals Script',
           description => 'Script for kickbanning those who post referral links in a channel',
           license => 'New BSD');

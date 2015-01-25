@@ -1,3 +1,15 @@
+# QuickEscape
+#
+# A script that is designed to automate the escape from #dontjoinitsatrap channel on Rizon network, or similar channels in other networks.
+# The logic of the channel is simple: the user will be forced by the network to auto-rejoin if he/she were to leave by normal methods.
+# One of the permitted ways to part the channel is when the TrapBot declares a small time frame (typically 1 minute) that allows users to leave.
+# This script will auto-part from the channel when that happens.
+#
+# Usage
+#
+# You can change both the trapping channel name and bot name by changing the values of *quickescape_channel* and *quickescape_bot* respectively in irssi settings.
+# Other than that, the script is autonomous and no need for the user to intervene.
+#
 use strict;
 use warnings;
 
@@ -7,7 +19,7 @@ use Irssi qw(command_bind signal_add settings_add_str settings_get_str);
 
 our $VERSION = '1.00';
 our %IRSSI = (authors => 'Linostar',
-          contact => 'https://github.com/linostar/irssi-scripts',
+          contact => 'lino.star@outlook.com',
           name => 'Quick Escape Script',
           description => 'Quick Escape from Trap Channels',
           license => 'New BSD');
