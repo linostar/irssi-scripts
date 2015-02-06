@@ -23,6 +23,7 @@ our %IRSSI = (authors => 'Linostar',
           contact => 'linostar@sdf.org',
           name => 'KickBan Referrals Script',
           description => 'Script for kickbanning those who post referral links in a channel',
+          commands => 'kbanref',
           license => 'New BSD');
 
 our %tickets = ();
