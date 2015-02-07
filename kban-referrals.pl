@@ -69,9 +69,10 @@ sub kbanref {
     else {
       $thelist = \$whitelist;
     }
+    my @list_arr = split(/\s+/, lc($$thelist));
     splice(@args, 0, 1);
     foreach (@args) {
-      if ($$thelist =~ m/\b$_\b/i) {
+      if ($_ ~~ @list_arr) {
         print("KBan-Referrals: site $_ is already in the list."); 
       }
       else {
@@ -103,14 +104,15 @@ sub kbanref {
     else {
       $thelist = \$whitelist;
     }
+    my @list_arr = split(/\s+/, lc($$thelist));
     splice(@args, 0, 1);
     foreach (@args) {
-      if ($$thelist !~ m/\b$_\b/i) {
-        print('KBan-Referrals: site is not in ' . $type . 'list.');
+      unless ($_ ~~ @list_arr) {
+        print("KBan-Referrals: site $_ is not in " . $type . 'list.');
       }
       else {
         $rmlist .= ' ' . $_;
-        $$thelist =~ s/\b$_\b//i;
+        $$thelist =~ s/(\s|^)$_(\s|$)/ /i;
       }
     }
     $$thelist =~ s/\s{2,}/ /g;
@@ -154,18 +156,16 @@ sub kbanref {
   # chan add command
   elsif ($command eq 'chan' && $subcommand eq 'add') {
     my $newchans = '';
+    my $ch = '';
+    my @chans_arr = split(/\s+/, lc($chans));
     splice(@args, 0, 1);
     foreach(@args) {
-      $stripped = $_;
-      $stripped =~ s/\#+//;
-      if ($chans =~ m/\b$stripped\b/i) {
-        print("KBan-Referrals: channel $_ is already in the list.");
-      }
-      elsif ($_ !~ m/^\#/) {
-        $newchans .= ' #' . $_;
+      $ch = (substr($_, 0, 1) eq '#') ? $_ : '#' . $_;
+      if ($ch ~~ @chans_arr) {
+        print("KBan-Referrals: channel $ch is already in the list.");
       }
       else {
-        $newchans .= ' ' . $_;
+        $newchans .= ' ' . $ch;
       }
     }
     if ($newchans && $newchans !~ m/^\s+$/) {  
@@ -181,26 +181,17 @@ sub kbanref {
   elsif ($command eq 'chan' && $subcommand eq 'remove') {
     my $rmchans = '';
     my $ch = '';
+    my @chans_arr = split(/\s+/, lc($chans));
     splice(@args, 0, 1);
     foreach (@args) {
-      $ch = $_;
-      if ($ch !~ m/^\#/ && $chans !~ m/^\#$ch\b/i && $chans !~ m/\s\#$ch\b/i) {
-        print("KBan-Referrals: channel \#$ch is not in the list.");
-        next;
-      }
-      elsif ($ch !~ m/^\#/) {
-        $rmchans .= ' #' . $ch;
-        $chans =~ s/^\#$ch\b//i;
-        $chans =~ s/\s\#$ch\b//i;
-        next;
-      }
-      if ($chans !~ m/^$ch\b/i && $chans !~ m/\s$ch\b/i) {
+      $ch = (substr($_, 0, 1) eq '#') ? $_ : '#' . $_;
+      unless ($ch ~~ @chans_arr) {
         print("KBan-Referrals: channel $ch is not in the list.");
+        next;
       }
       else {
         $rmchans .= ' ' . $ch;
-        $chans =~ s/\s$ch\b//i;
-        $chans =~ s/^$ch\b//i;
+        $chans =~ s/(\s|^)($ch)(\s|$)/ /i;
       }
     }
     $chans =~ s/\s{2,}/ /g; #remove extra spaces
@@ -276,12 +267,14 @@ sub kban_action {
   my $whitelist = settings_get_str('kbanreferrals_whitelist');
   my $blacklist = settings_get_str('kbanreferrals_blacklist');
   my $chans = settings_get_str('kbanreferrals_channels');
-  # add big ticket value to users who post messages without urls so they don't get punished
-  $tickets{ $nick . $target } += 10 if (exists($tickets{ $nick . $target }) && $chans =~ m/$target\b/i && !contains_url($msg));
+  my @chans_arr = split(/\s+/, lc($chans));
+  $mode = 'normal' unless ($mode eq 'paranoid');
+  # add a high ticket value to users who post messages without urls so they don't get punished
+  $tickets{ $nick . $target } += 10 if (exists($tickets{ $nick . $target }) && $target ~~ @chans_arr && !contains_url($msg));
   # otherwise, start the real investigation
-  if ($chans =~ m/$target\b/i && contains_url($msg)) {
+  if ($target ~~ @chans_arr && contains_url($msg)) {
     # paranoid mode
-    if ($mode eq 'paranoid') {
+    if ($mode =~ m/^paranoid$/i) {
       my $bad = 1;
       foreach (split(/\s+/, $whitelist)) {
         if ($msg =~ m/$_/i) {
@@ -292,7 +285,7 @@ sub kban_action {
       kb($server, $target, $nick, $nick_addr) if ($bad);
     }
     # normal mode
-    else {
+    elsif ($mode =~ m/^normal$/i) {
       # if it is in the blacklist, always ban and stop here
       my $stop = 0;
       foreach (split(/\s+/, $blacklist)) {
@@ -326,7 +319,8 @@ sub kban_action {
 sub ticket_start {
   my ($server, $channel, $nick, $nick_addr) = @_;
   my $chans = settings_get_str('kbanreferrals_channels');
-  if ($chans =~ m/$channel\b/i) {
+  my @chans_arr = split(/\s+/, lc($chans));
+  if ($channel ~~ @chans_arr) {
     $tickets{ $nick . $channel } = 1;
   }
 }
@@ -334,7 +328,8 @@ sub ticket_start {
 sub increase_ticket {
   my ($server, $channel, $nick, $nick_addr, $reason) = @_;
   my $chans = settings_get_str('kbanreferrals_channels');
-  if (exists($tickets{ $nick . $channel }) && $chans =~ m/$channel\b/i) {
+  my @chans_arr = split(/\s+/, lc($chans));
+  if (exists($tickets{ $nick . $channel }) && $channel ~~ @chans_arr) {
     # if the poor bastard only posted one sole message containing a url before leaving
     # then it's probably a referral url, so ban him/her
     if ($tickets{ $nick . $channel } == 2) {
